@@ -21,6 +21,9 @@
 #   /lpc clear - Clear chat for all players
 #   /lpc debug <player> - Show resolved prefix/suffix info for a player
 #
+# Note: hover-message and click-command require a Paper-based server (Paper, Purpur, etc.).
+# On plain CraftBukkit/Spigot they are silently ignored.
+#
 # More information: https://www.spigotmc.org/resources/68965
 
 chat-format: "{prefix}{name}&r: {message}"
@@ -38,3 +41,17 @@ group-formats:
 
 # Message shown after /lpc clear
 clear-chat-message: "&7Chat has been cleared by a staff member."
+
+# Tooltip shown when a player hovers over someone's chat message.
+# Supports the same placeholders as chat-format, resolved for the message's author, plus PlaceholderAPI.
+# Use "\n" for line breaks. Requires a Paper-based server.
+hover-message:
+  enabled: false
+  text: "&7Sender: &f{name}\n&7World: &f{world}\n&7Kills: &f%statistic_kills%"
+
+# Command run (as the player who clicked) when a chat message is clicked.
+# Supports the same placeholders as chat-format, resolved for the message's author, plus PlaceholderAPI.
+# Requires a Paper-based server.
+click-command:
+  enabled: false
+  command: "/tpa {name}"

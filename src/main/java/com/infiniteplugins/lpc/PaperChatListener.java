@@ -4,6 +4,8 @@ import io.papermc.paper.chat.ChatRenderer;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -26,11 +28,22 @@ final class PaperChatListener implements Listener {
 		final String format = plugin.buildFormat(player);
 		final Component message = LEGACY.deserialize(plugin.processMessage(player, LEGACY.serialize(event.message())));
 
+		final String hoverRaw = plugin.isHoverEnabled() ? plugin.buildHoverText(player) : "";
+		final Component hoverText = hoverRaw.isEmpty() ? null : LEGACY.deserialize(hoverRaw);
+		final String clickCommand = plugin.isClickCommandEnabled() ? plugin.buildClickCommand(player) : "";
+
 		event.message(message);
 		event.renderer(new ChatRenderer() {
 			@Override
 			public Component render(final Player source, final Component sourceDisplayName, final Component message, final Audience viewer) {
-				return formatMessage(format, message);
+				Component rendered = formatMessage(format, message);
+				if (hoverText != null) {
+					rendered = rendered.hoverEvent(HoverEvent.showText(hoverText));
+				}
+				if (!clickCommand.isEmpty()) {
+					rendered = rendered.clickEvent(ClickEvent.runCommand(clickCommand));
+				}
+				return rendered;
 			}
 		});
 	}

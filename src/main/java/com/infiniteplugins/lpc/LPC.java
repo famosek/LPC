@@ -39,11 +39,17 @@ public final class LPC extends JavaPlugin implements Listener {
 
 		saveDefaultConfig();
 
+		boolean paperChat = false;
 		try {
 			Class.forName("io.papermc.paper.event.player.AsyncChatEvent");
 			getServer().getPluginManager().registerEvents(new PaperChatListener(this), this);
+			paperChat = true;
 		} catch (ClassNotFoundException ignored) {
 			getServer().getPluginManager().registerEvents(this, this);
+		}
+
+		if (!paperChat && (isHoverEnabled() || isClickCommandEnabled())) {
+			getLogger().warning("hover-message/click-command require a Paper-based server (Paper, Purpur, etc.) and will be ignored on this server.");
 		}
 
 		final String[] chatPlugins = {"EssentialsChat", "VentureChat", "HeroChat", "DeluxeChat", "ChatManager", "ChatEx", "UltraChat", "TownyChat"};
@@ -166,6 +172,52 @@ public final class LPC extends JavaPlugin implements Listener {
 		format = colorize(translateHexColorCodes(format));
 
 		return format;
+	}
+
+	boolean isHoverEnabled() {
+		return getConfig().getBoolean("hover-message.enabled", false);
+	}
+
+	boolean isClickCommandEnabled() {
+		return getConfig().getBoolean("click-command.enabled", false);
+	}
+
+	String buildHoverText(final Player author) {
+		final String text = applyPlaceholders(author, getConfig().getString("hover-message.text", ""));
+		return colorize(translateHexColorCodes(text));
+	}
+
+	String buildClickCommand(final Player author) {
+		return applyPlaceholders(author, getConfig().getString("click-command.command", ""));
+	}
+
+	private String applyPlaceholders(final Player author, String template) {
+		if (template == null || template.isEmpty()) {
+			return "";
+		}
+
+		final CachedMetaData metaData = this.luckPerms.getPlayerAdapter(Player.class).getMetaData(author);
+		final String prefix = metaData.getPrefix();
+		final String suffix = metaData.getSuffix();
+		final String usernameColor = metaData.getMetaValue("username-color");
+		final String messageColor = metaData.getMetaValue("message-color");
+
+		template = template
+				.replace("{prefix}", prefix != null ? prefix : "")
+				.replace("{suffix}", suffix != null ? suffix : "")
+				.replace("{prefixes}", metaData.getPrefixes().keySet().stream().map(key -> metaData.getPrefixes().get(key)).collect(Collectors.joining()))
+				.replace("{suffixes}", metaData.getSuffixes().keySet().stream().map(key -> metaData.getSuffixes().get(key)).collect(Collectors.joining()))
+				.replace("{world}", author.getWorld().getName())
+				.replace("{name}", author.getName())
+				.replace("{displayname}", author.getDisplayName())
+				.replace("{username-color}", usernameColor != null ? usernameColor : "")
+				.replace("{message-color}", messageColor != null ? messageColor : "");
+
+		if (getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+			template = PlaceholderAPI.setPlaceholders(author, template);
+		}
+
+		return template;
 	}
 
 	String processMessage(final Player player, final String message) {
