@@ -4,6 +4,7 @@ import io.papermc.paper.chat.ChatRenderer;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextReplacementConfig;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -49,13 +50,11 @@ final class PaperChatListener implements Listener {
 	}
 
 	private Component formatMessage(final String format, final Component message) {
-		final String[] parts = format.split("\\{message}", -1);
-		Component component = LEGACY.deserialize(parts[0]);
-
-		for (int i = 1; i < parts.length; i++) {
-			component = component.append(message).append(LEGACY.deserialize(parts[i]));
-		}
-
-		return component;
+		// Deserialize the whole format first and replace {message} in place, so the message inherits
+		// the color/decorations that precede it (e.g. "&c{message}" or "{message-color}{message}").
+		return LEGACY.deserialize(format).replaceText(TextReplacementConfig.builder()
+				.matchLiteral("{message}")
+				.replacement(message)
+				.build());
 	}
 }
